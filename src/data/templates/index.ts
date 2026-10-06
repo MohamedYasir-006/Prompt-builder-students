@@ -1,13 +1,16 @@
 import type { Audience, Template } from '../../types'
+import { codingExplainer } from './college/coding-explainer'
 import { courseStudyBuddy } from './college/course-study-buddy'
+import { projectMentor } from './college/project-mentor'
+import { resumeCoach } from './college/resume-coach'
+import { vivaInterviewPractice } from './college/viva-interview-practice'
 import { doubtSolver } from './school/doubt-solver'
 import { examRevisionQuizzer } from './school/exam-revision-quizzer'
 import { explainLike12 } from './school/explain-like-12'
 import { homeworkHelper } from './school/homework-helper'
 import { languagePractice } from './school/language-practice'
 
-// Phase 5a adds the 4 remaining school templates (6 total).
-// The 4 college templates land in step 5b.
+// All 10 starter templates: 5 school + 5 college.
 export const templates: Template[] = [
   homeworkHelper,
   examRevisionQuizzer,
@@ -15,6 +18,10 @@ export const templates: Template[] = [
   languagePractice,
   doubtSolver,
   courseStudyBuddy,
+  vivaInterviewPractice,
+  resumeCoach,
+  projectMentor,
+  codingExplainer,
 ]
 
 export function getTemplateById(id: string): Template | undefined {

@@ -4,8 +4,10 @@ import {
   schoolSafetyRules,
 } from '../data/safetyRules'
 import { courseStudyBuddy } from '../data/templates/college/course-study-buddy'
+import { templates } from '../data/templates/index'
+import { doubtSolver } from '../data/templates/school/doubt-solver'
 import { homeworkHelper } from '../data/templates/school/homework-helper'
-import type { Answers } from '../types'
+import type { Answers, Template } from '../types'
 import { buildPrompt } from './promptBuilder'
 
 const homeworkAnswers: Answers = {
@@ -213,5 +215,92 @@ describe('output format variants (data-driven)', () => {
     const format =
       result.sections.find((s) => s.id === 'outputFormat')?.content ?? ''
     expect(format).toContain('Key idea in 2-3 lines')
+  })
+
+  it('uses the diverged-work flow for a different-answer doubt', () => {
+    const result = buildPrompt(
+      doubtSolver,
+      {
+        subject: 'maths',
+        topic: 'quadratic equations',
+        grade: 'class-10',
+        doubtKind: 'wrong-answer',
+        doubt: 'Solve 2x² − 7x + 3 = 0.',
+        tone: 'friendly',
+      },
+      'school',
+    )
+    const format =
+      result.sections.find((s) => s.id === 'outputFormat')?.content ?? ''
+    expect(format).toContain('show every step of their work')
+    expect(format).toContain('diverged from the correct method')
+    expect(format).toContain('practice question')
+  })
+
+  it('keeps the standard hint-first flow for other doubt kinds', () => {
+    const result = buildPrompt(
+      doubtSolver,
+      {
+        subject: 'maths',
+        topic: 'quadratic equations',
+        grade: 'class-10',
+        doubtKind: 'dont-know-start',
+        doubt: 'Solve 2x² − 7x + 3 = 0.',
+        tone: 'friendly',
+      },
+      'school',
+    )
+    const format =
+      result.sections.find((s) => s.id === 'outputFormat')?.content ?? ''
+    expect(format).toContain('One hint or guiding question')
+    expect(format).not.toContain('diverged')
+  })
+})
+
+/** One valid sample value for a question (first option for selects). */
+function sampleValue(
+  template: Template,
+  questionId: string,
+): string | string[] {
+  const question = template.questions.find((q) => q.id === questionId)
+  if (
+    (question?.type === 'select' || question?.type === 'multiselect') &&
+    (question.options?.length ?? 0) > 0
+  ) {
+    const first = question.options?.[0]?.value ?? 'sample'
+    return question.type === 'multiselect' ? [first] : first
+  }
+  return 'Sample answer'
+}
+
+function answersFor(template: Template, includeOptional: boolean): Answers {
+  const answers: Answers = {}
+  for (const question of template.questions) {
+    if (question.required || includeOptional) {
+      answers[question.id] = sampleValue(template, question.id)
+    }
+  }
+  return answers
+}
+
+describe.each(templates)('no leaking placeholders for $id', (template) => {
+  it('is clean with minimum required answers', () => {
+    const audience = template.audiences[0] ?? 'school'
+    const result = buildPrompt(
+      template,
+      answersFor(template, false),
+      audience,
+    )
+    expect(result.fullText).not.toMatch(/\{\{\w+\}\}/)
+    expect(result.fullText).not.toMatch(/undefined|null/)
+    expect(result.fullText).not.toMatch(/\n{3,}/)
+  })
+
+  it('is clean with all answers filled', () => {
+    const audience = template.audiences[0] ?? 'school'
+    const result = buildPrompt(template, answersFor(template, true), audience)
+    expect(result.fullText).not.toMatch(/\{\{\w+\}\}/)
+    expect(result.fullText).not.toMatch(/undefined|null/)
+    expect(result.fullText).not.toMatch(/\n{3,}/)
   })
 })

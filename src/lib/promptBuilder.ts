@@ -189,7 +189,10 @@ export function buildPrompt(
     goal: cap(fillPlaceholders(template.goal, template, answers)),
     tone: cap(buildTone(answers)),
     rules: cap(
-      [...getSafetyRules(audience), ...template.rules]
+      [
+        ...getSafetyRules(audience),
+        ...template.rules.map((r) => fillPlaceholders(r, template, answers)),
+      ]
         .map((r) => r.trim())
         .filter((r) => r !== '')
         .map((r) => `- ${r}`)

@@ -111,7 +111,7 @@ export const examRevisionQuizzer: Template = {
   outputFormat:
     'During the quiz, repeat this shape every round:\n1. Question number and the question (one question only)\n2. Wait for the answer\n3. "Correct." or "Not quite." plus a 2-line explanation\n4. Running score, e.g. "Score: 3/5 so far."\nAt the end, give: total score, weak topics, and 3 things to revise next',
   firstMessage:
-    'Hi! I am your quizzer for {{subject}} — {{topic}}, {{quizSize}}. I will ask one question at a time and keep your score. Ready? Here is question 1.',
+    'Hi! I am your quizzer for {{subject}} — a quiz of {{quizSize}} on {{topic}}: one question at a time, scored as we go. [In this same opening message, right after this greeting, write out question 1 and wait for my answer — do not wait for me to say "ready" first.]',
   sampleQuestions: [
     'Start the quiz now.',
     'That was too easy — make the next one harder.',
