@@ -1,9 +1,21 @@
 import type { Audience, Template } from '../../types'
 import { courseStudyBuddy } from './college/course-study-buddy'
+import { doubtSolver } from './school/doubt-solver'
+import { examRevisionQuizzer } from './school/exam-revision-quizzer'
+import { explainLike12 } from './school/explain-like-12'
 import { homeworkHelper } from './school/homework-helper'
+import { languagePractice } from './school/language-practice'
 
-// Phase 2 ships the first 2 templates. The remaining 8 land in Phase 5.
-export const templates: Template[] = [homeworkHelper, courseStudyBuddy]
+// Phase 5a adds the 4 remaining school templates (6 total).
+// The 4 college templates land in step 5b.
+export const templates: Template[] = [
+  homeworkHelper,
+  examRevisionQuizzer,
+  explainLike12,
+  languagePractice,
+  doubtSolver,
+  courseStudyBuddy,
+]
 
 export function getTemplateById(id: string): Template | undefined {
   return templates.find((t) => t.id === id)
