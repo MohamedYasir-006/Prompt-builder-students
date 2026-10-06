@@ -1,4 +1,4 @@
-import type { Answers, Audience } from '../types'
+import type { Answers, Audience, Template } from '../types'
 
 export interface ShareData {
   templateId: string
@@ -93,4 +93,91 @@ export function decodeShareData(input: string): ShareData | null {
   } catch {
     return null
   }
+}
+
+/** Length above which a share URL gets unwieldy to send by hand. */
+export const SHARE_LINK_WARN_LENGTH = 1500
+
+function isNonEmpty(value: string | string[] | undefined): boolean {
+  if (value === undefined) return false
+  if (Array.isArray(value)) return value.some((v) => v.trim() !== '')
+  return value.trim() !== ''
+}
+
+/**
+ * Validate decoded share data against a template. Returns null when valid,
+ * otherwise a short human-readable reason. Checks: audience is supported by
+ * the template, every answer key belongs to the template, option values are
+ * from the allowed lists, string lengths respect maxLength, and required
+ * questions are answered. Used by ResultPage for both shared hashes and
+ * in-app navigation state — invalid always means a friendly error, never a crash.
+ */
+export function validateAnswersForTemplate(
+  template: Template,
+  audience: Audience,
+  answers: Answers,
+): string | null {
+  if (!template.audiences.includes(audience)) {
+    return `This saved prompt is for a different level and does not match the "${template.title}" template.`
+  }
+  const byId = new Map(template.questions.map((q) => [q.id, q]))
+  for (const key of Object.keys(answers)) {
+    if (!byId.has(key)) {
+      return `This link contains an answer ("${key}") that does not belong to the "${template.title}" template.`
+    }
+  }
+  for (const question of template.questions) {
+    const value = answers[question.id]
+    if (question.type === 'select') {
+      if (value !== undefined) {
+        if (typeof value !== 'string') {
+          return `The answer to "${question.label}" has the wrong shape.`
+        }
+        if (
+          value.trim() !== '' &&
+          (question.options ?? []).every((o) => o.value !== value.trim())
+        ) {
+          return `The answer to "${question.label}" is not a valid option.`
+        }
+      }
+    } else if (question.type === 'multiselect') {
+      if (value !== undefined) {
+        if (
+          !Array.isArray(value) ||
+          !value.every((item) => typeof item === 'string')
+        ) {
+          return `The answer to "${question.label}" has the wrong shape.`
+        }
+        const allowed = new Set((question.options ?? []).map((o) => o.value))
+        for (const item of value) {
+          if (item.trim() !== '' && !allowed.has(item.trim())) {
+            return `The answer to "${question.label}" is not a valid option.`
+          }
+          if (
+            question.maxLength !== undefined &&
+            item.length > question.maxLength
+          ) {
+            return `The answer to "${question.label}" is too long.`
+          }
+        }
+      }
+    } else {
+      // text | textarea
+      if (value !== undefined) {
+        if (typeof value !== 'string') {
+          return `The answer to "${question.label}" has the wrong shape.`
+        }
+        if (
+          question.maxLength !== undefined &&
+          value.length > question.maxLength
+        ) {
+          return `The answer to "${question.label}" is too long.`
+        }
+      }
+    }
+    if (question.required && !isNonEmpty(value)) {
+      return `This link is missing the answer to "${question.label}".`
+    }
+  }
+  return null
 }

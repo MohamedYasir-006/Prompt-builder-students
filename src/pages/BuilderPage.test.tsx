@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { BuilderPage } from './BuilderPage'
 
 function renderAt(path: string) {
@@ -13,6 +13,10 @@ function renderAt(path: string) {
     </MemoryRouter>,
   )
 }
+
+beforeEach(() => {
+  window.sessionStorage.clear()
+})
 
 describe('BuilderPage', () => {
   it('shows one question at a time with a progress bar', () => {
@@ -85,5 +89,38 @@ describe('BuilderPage', () => {
     expect(
       screen.getByRole('link', { name: 'Browse templates' }),
     ).toHaveAttribute('href', '/templates')
+  })
+
+  it('restores draft answers from sessionStorage on reload', async () => {
+    const user = userEvent.setup()
+    const first = renderAt('/build/homework-helper')
+    await user.selectOptions(
+      screen.getByLabelText(/which subject is the homework for/i),
+      'maths',
+    )
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(
+      await screen.findByLabelText(/what is the homework about/i),
+    ).toBeInTheDocument()
+    first.unmount()
+
+    // A reload mounts the builder again: the draft keeps the first answer.
+    renderAt('/build/homework-helper')
+    expect(
+      screen.getByLabelText(/which subject is the homework for/i),
+    ).toHaveValue('maths')
+  })
+
+  it('moves focus to the new question when Next is pressed', async () => {
+    const user = userEvent.setup()
+    renderAt('/build/homework-helper')
+    await user.selectOptions(
+      screen.getByLabelText(/which subject is the homework for/i),
+      'maths',
+    )
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(
+      await screen.findByLabelText(/what is the homework about/i),
+    ).toHaveFocus()
   })
 })
