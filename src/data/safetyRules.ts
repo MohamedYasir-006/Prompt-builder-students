@@ -1,0 +1,1 @@
+export const safetyRulesPlaceholder = 'placeholder'
