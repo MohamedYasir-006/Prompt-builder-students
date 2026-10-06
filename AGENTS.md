@@ -36,3 +36,11 @@ Conventional answer keys (`buildPrompt` keys off these, see `src/lib/promptBuild
   human-readable labels ("Class 8", not "class-8").
 - Every `{{placeholder}}` in role/goal/rules/outputFormat/firstMessage must
   match a question id (`templates.test.ts` enforces all of the above).
+- Output-format branching is data-driven: optional
+  `outputFormatVariants: [{ whenAnswer, equals, format }]` on `Template`.
+  `buildPrompt` uses the first variant whose answer includes `equals`,
+  else the default `outputFormat`. `whenAnswer` must be a real question id
+  and `equals` a valid option value (enforced by `templates.test.ts`).
+  Never add template-specific imports/keys to `promptBuilder`.
+- Builder drafts live in sessionStorage per template and are cleared after
+  reaching `/result`.

@@ -16,6 +16,7 @@ function templateTexts(template: Template): string[] {
     template.role,
     template.goal,
     template.outputFormat,
+    ...(template.outputFormatVariants ?? []).map((v) => v.format),
     template.firstMessage,
     ...template.rules,
   ]
@@ -60,6 +61,24 @@ describe.each(templates)('template $id', (template) => {
       for (const key of placeholdersIn(text)) {
         expect(ids.has(key)).toBe(true)
       }
+    }
+  })
+
+  it('has valid outputFormatVariants when present', () => {
+    for (const variant of template.outputFormatVariants ?? []) {
+      const question = template.questions.find(
+        (q) => q.id === variant.whenAnswer,
+      )
+      expect(question).toBeDefined()
+      expect(variant.format.length).toBeGreaterThan(0)
+      const options = question?.options ?? []
+      // Variants branch on a select answer: the trigger must be a real option.
+      // Templates without options (free text) cannot use variants reliably.
+      expect(options.length).toBeGreaterThan(0)
+      expect(
+        options.map((o) => o.value),
+        `variant equals "${variant.equals}" must be an option of "${variant.whenAnswer}"`,
+      ).toContain(variant.equals)
     }
   })
 })

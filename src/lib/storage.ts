@@ -1,5 +1,5 @@
 import { STORAGE_KEYS } from '../config'
-import type { Audience, SavedPrompt } from '../types'
+import type { Answers, Audience, SavedPrompt } from '../types'
 
 function isBrowser(): boolean {
   return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
@@ -68,4 +68,62 @@ export function loadAudience(): Audience | null {
 
 export function saveAudience(audience: Audience): void {
   setItem(STORAGE_KEYS.audience, audience)
+}
+
+function isSessionAvailable(): boolean {
+  try {
+    return (
+      typeof window !== 'undefined' &&
+      typeof window.sessionStorage !== 'undefined'
+    )
+  } catch {
+    return false
+  }
+}
+
+function isAnswersRecord(value: unknown): value is Answers {
+  if (typeof value !== 'object' || value === null) return false
+  return Object.values(value as Record<string, unknown>).every(
+    (v) =>
+      typeof v === 'string' ||
+      (Array.isArray(v) && v.every((item) => typeof item === 'string')),
+  )
+}
+
+export function builderDraftKey(templateId: string): string {
+  return `${STORAGE_KEYS.builderDraftPrefix}${templateId}`
+}
+
+/** Draft answers for one template, kept in sessionStorage (tab-scoped). */
+export function loadBuilderDraft(templateId: string): Answers | null {
+  try {
+    if (!isSessionAvailable()) return null
+    const raw = window.sessionStorage.getItem(builderDraftKey(templateId))
+    if (raw === null) return null
+    const parsed: unknown = JSON.parse(raw)
+    return isAnswersRecord(parsed) ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+export function saveBuilderDraft(templateId: string, answers: Answers): void {
+  try {
+    if (!isSessionAvailable()) return
+    window.sessionStorage.setItem(
+      builderDraftKey(templateId),
+      JSON.stringify(answers),
+    )
+  } catch {
+    // Session storage full or unavailable: builder keeps working in memory.
+  }
+}
+
+export function clearBuilderDraft(templateId: string): void {
+  try {
+    if (!isSessionAvailable()) return
+    window.sessionStorage.removeItem(builderDraftKey(templateId))
+  } catch {
+    // Best-effort only.
+  }
 }

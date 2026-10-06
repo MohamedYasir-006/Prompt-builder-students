@@ -1,5 +1,4 @@
 import { getSafetyRules } from '../data/safetyRules'
-import { homeworkHelperCheckAnswerOutputFormat } from '../data/templates/school/homework-helper'
 import { getToneById } from '../data/tones'
 import type {
   Answers,
@@ -145,16 +144,19 @@ const FIRST_MESSAGE_LEAD_IN =
   'Begin the conversation by sending this message to the student:'
 
 /**
- * The Homework Helper answer format depends on the help type: checking an
- * answer needs a correct/wrong/corrected flow, everything else uses the
- * template's standard step-by-step format.
+ * Data-driven output format: the first variant whose question answer
+ * includes the trigger value wins; otherwise the default outputFormat.
+ * All branching lives in template data, never in this file.
  */
 function resolveOutputFormat(template: Template, answers: Answers): string {
-  if (template.id !== 'homework-helper') return template.outputFormat
-  const helpKind = answers['helpKind']
-  const values = Array.isArray(helpKind) ? helpKind : [helpKind]
-  if (values.includes('check-answer')) {
-    return homeworkHelperCheckAnswerOutputFormat
+  const variants = template.outputFormatVariants ?? []
+  for (const variant of variants) {
+    const raw = answers[variant.whenAnswer]
+    if (raw === undefined || raw === null) continue
+    const values = Array.isArray(raw) ? raw : [raw]
+    if (values.map((v) => v.trim()).includes(variant.equals)) {
+      return variant.format
+    }
   }
   return template.outputFormat
 }

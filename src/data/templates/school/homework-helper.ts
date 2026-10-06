@@ -95,6 +95,14 @@ export const homeworkHelper: Template = {
   ],
   outputFormat:
     'Answer in this order:\n1. What the question asks (one line)\n2. Steps to solve it, each step on its own line\n3. Final answer in bold\n4. One quick practice question',
+  outputFormatVariants: [
+    {
+      whenAnswer: 'helpKind',
+      equals: 'check-answer',
+      format:
+        'First, ask the student to show their work on the question.\nThen reply in this order:\n(a) What is correct in their work (one line)\n(b) Exactly where it went wrong (one line)\n(c) The corrected step, explained simply\n(d) One quick practice question on the same topic',
+    },
+  ],
   firstMessage:
     "Hi! I am your homework helper for {{subject}} — let's work on {{topic}} together. Show me your first question and tell me what you have tried so far.",
   sampleQuestions: [
@@ -108,11 +116,3 @@ export const homeworkHelper: Template = {
     'After finishing, ask for a 5-question mini quiz.',
   ],
 }
-
-/**
- * Answer format used when the help type is checking an answer: the bot must
- * see the student's work first, then judge it. Referenced by `buildPrompt`
- * (see `resolveOutputFormat`); not part of the `Template` schema.
- */
-export const homeworkHelperCheckAnswerOutputFormat =
-  'First, ask the student to show their work on the question.\nThen reply in this order:\n(a) What is correct in their work (one line)\n(b) Exactly where it went wrong (one line)\n(c) The corrected step, explained simply\n(d) One quick practice question on the same topic'

@@ -5,7 +5,7 @@ export const APP_TAGLINE = 'Build your own study chatbot prompt'
 export const STORAGE_KEYS = {
   audience: 'botforge:audience',
   savedPrompts: 'botforge:saved-prompts',
-  builderState: 'botforge:builder-state',
+  builderDraftPrefix: 'botforge:draft:',
 } as const
 
 export const LIMITS = {

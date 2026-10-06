@@ -17,6 +17,15 @@ export interface Question {
   maxLength?: number
 }
 
+export interface OutputFormatVariant {
+  /** Question id whose answer selects this format. */
+  whenAnswer: string
+  /** Option value that triggers this format. */
+  equals: string
+  /** Format text used instead of the default outputFormat. May use {{placeholders}}. */
+  format: string
+}
+
 export interface Template {
   id: string
   audiences: Audience[]
@@ -29,6 +38,7 @@ export interface Template {
   goal: string
   rules: string[]
   outputFormat: string
+  outputFormatVariants?: OutputFormatVariant[]
   firstMessage: string
   sampleQuestions: string[]
   improveTips: string[]

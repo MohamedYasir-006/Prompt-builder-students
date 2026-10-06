@@ -182,7 +182,7 @@ describe('first message lead-in', () => {
   })
 })
 
-describe('homework output format by help type', () => {
+describe('output format variants (data-driven)', () => {
   it('uses the check-answer flow when checking an answer', () => {
     const result = buildPrompt(
       homeworkHelper,

@@ -1,12 +1,26 @@
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { StepForm } from '../components/builder/StepForm'
 import { getTemplateById } from '../data/templates'
 import { useAudience } from '../hooks/useAudience'
 import type { Answers } from '../types'
 
+interface BuilderLocationState {
+  answers?: Answers
+}
+
+function isAnswersRecord(value: unknown): value is Answers {
+  if (typeof value !== 'object' || value === null) return false
+  return Object.values(value as Record<string, unknown>).every(
+    (v) =>
+      typeof v === 'string' ||
+      (Array.isArray(v) && v.every((item) => typeof item === 'string')),
+  )
+}
+
 export function BuilderPage() {
   const { templateId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const [audience] = useAudience()
   const template =
     templateId !== undefined ? getTemplateById(templateId) : undefined
@@ -33,6 +47,12 @@ export function BuilderPage() {
     ? audience
     : template.audiences[0]
 
+  const rawState = location.state as BuilderLocationState | null
+  const prefill =
+    rawState?.answers !== undefined && isAnswersRecord(rawState.answers)
+      ? rawState.answers
+      : undefined
+
   function handleComplete(answers: Answers) {
     navigate('/result', {
       state: {
@@ -53,7 +73,12 @@ export function BuilderPage() {
           {template.description}
         </p>
       </div>
-      <StepForm template={template} onComplete={handleComplete} />
+      <StepForm
+        key={template.id}
+        template={template}
+        initialAnswers={prefill}
+        onComplete={handleComplete}
+      />
     </div>
   )
 }

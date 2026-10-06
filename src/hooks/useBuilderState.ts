@@ -1,4 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import {
+  clearBuilderDraft,
+  loadBuilderDraft,
+  saveBuilderDraft,
+} from '../lib/storage'
 import type { Answers, Question, Template } from '../types'
 
 function requiredMessage(question: Question): string {
@@ -24,17 +29,34 @@ export interface BuilderState {
   setAnswer: (id: string, value: string | string[]) => void
   goNext: () => boolean
   goBack: () => void
+  clearDraft: () => void
 }
 
-/** One-question-per-screen builder state with per-step validation. */
-export function useBuilderState(template: Template): BuilderState {
-  const [answers, setAnswers] = useState<Answers>({})
+/**
+ * One-question-per-screen builder state with per-step validation.
+ * Draft answers persist per template in sessionStorage so a reload keeps
+ * progress; the draft is cleared once the student reaches /result.
+ * Pass `initialAnswers` (e.g. from Edit answers) to pre-fill the form —
+ * explicit answers win over any saved draft.
+ */
+export function useBuilderState(
+  template: Template,
+  initialAnswers?: Answers,
+): BuilderState {
+  const [answers, setAnswers] = useState<Answers>(
+    () =>
+      initialAnswers ?? loadBuilderDraft(template.id) ?? {},
+  )
   const [step, setStep] = useState(0)
   const [error, setError] = useState('')
 
   const total = template.questions.length
   const safeStep = Math.min(step, total - 1)
   const question = template.questions[safeStep]
+
+  useEffect(() => {
+    saveBuilderDraft(template.id, answers)
+  }, [template.id, answers])
 
   function setAnswer(id: string, value: string | string[]) {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -57,6 +79,10 @@ export function useBuilderState(template: Template): BuilderState {
     setStep((s) => Math.max(s - 1, 0))
   }
 
+  function clearDraft() {
+    clearBuilderDraft(template.id)
+  }
+
   return {
     answers,
     step: safeStep,
@@ -67,5 +93,6 @@ export function useBuilderState(template: Template): BuilderState {
     setAnswer,
     goNext,
     goBack,
+    clearDraft,
   }
 }

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { useBuilderState } from '../../hooks/useBuilderState'
 import type { Answers, Template } from '../../types'
 import { Button } from '../ui/Button'
@@ -7,18 +8,34 @@ import { QuestionField } from './QuestionField'
 
 interface StepFormProps {
   template: Template
+  initialAnswers?: Answers
   onComplete: (answers: Answers) => void
 }
 
 /** One question per screen, with progress, Back/Next, and validation. */
-export function StepForm({ template, onComplete }: StepFormProps) {
-  const state = useBuilderState(template)
+export function StepForm({
+  template,
+  initialAnswers,
+  onComplete,
+}: StepFormProps) {
+  const state = useBuilderState(template, initialAnswers)
   const total = template.questions.length
+  const questionRef = useRef<HTMLDivElement>(null)
+
+  // Move keyboard focus to the new question whenever the step changes,
+  // so screen-reader and keyboard users land on the fresh input.
+  useEffect(() => {
+    const target = questionRef.current?.querySelector<HTMLElement>(
+      'input, select, textarea',
+    )
+    target?.focus()
+  }, [state.step, state.question.id])
 
   function handleNext() {
     const wasLast = state.isLast
     if (!state.goNext()) return
     if (wasLast) {
+      state.clearDraft()
       onComplete(state.answers)
     }
   }
@@ -34,12 +51,14 @@ export function StepForm({ template, onComplete }: StepFormProps) {
             handleNext()
           }}
         >
-          <QuestionField
-            question={state.question}
-            value={state.answers[state.question.id]}
-            onChange={(value) => state.setAnswer(state.question.id, value)}
-            error={state.error}
-          />
+          <div ref={questionRef}>
+            <QuestionField
+              question={state.question}
+              value={state.answers[state.question.id]}
+              onChange={(value) => state.setAnswer(state.question.id, value)}
+              error={state.error}
+            />
+          </div>
           <div className="flex gap-3">
             {!state.isFirst && (
               <Button variant="secondary" onClick={state.goBack}>
