@@ -1,15 +1,14 @@
-import type { Template } from '../../types'
+import type { Audience, Template } from '../../types'
+import { courseStudyBuddy } from './college/course-study-buddy'
+import { homeworkHelper } from './school/homework-helper'
 
-// Phase 1 placeholder: full template content lands in Phase 2 (2 templates)
-// and Phase 5 (remaining 8). Registry helpers arrive with real data.
-export const templates: Template[] = []
+// Phase 2 ships the first 2 templates. The remaining 8 land in Phase 5.
+export const templates: Template[] = [homeworkHelper, courseStudyBuddy]
 
 export function getTemplateById(id: string): Template | undefined {
   return templates.find((t) => t.id === id)
 }
 
-export function getTemplatesByAudience(
-  audience: Template['audiences'][number],
-): Template[] {
+export function getTemplatesByAudience(audience: Audience): Template[] {
   return templates.filter((t) => t.audiences.includes(audience))
 }

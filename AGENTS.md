@@ -23,3 +23,16 @@ How to add a template (4 steps):
 2. Register it in `src/data/templates/index.ts`.
 3. Ensure it has 5-8 questions and all required `Template` fields.
 4. Run `npm run test`, `npm run lint`, `npm run build` and test the builder flow.
+
+Conventional answer keys (`buildPrompt` keys off these, see `src/lib/promptBuilder.ts`):
+
+- `tone` — required select; option values must exist in `src/data/tones.ts`.
+- `notes` — optional textarea, `maxLength: 1800` (1800 + wrapper stays
+  under the 2000-char section cap, so notes are never silently truncated).
+- `subject` (school) / `course` (college) — what the student studies.
+- `topic` (school) / `focusTopic` (college) — the current topic or exam.
+- `grade` (school) / `year` (college) / `level` — the student's level.
+- Select values resolve to their option labels in the prompt, so use
+  human-readable labels ("Class 8", not "class-8").
+- Every `{{placeholder}}` in role/goal/rules/outputFormat/firstMessage must
+  match a question id (`templates.test.ts` enforces all of the above).

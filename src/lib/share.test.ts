@@ -1,8 +1,66 @@
 import { describe, expect, it } from 'vitest'
-import { sharePlaceholder } from './share'
+import type { ShareData } from './share'
+import {
+  buildShareHash,
+  decodeShareData,
+  encodeShareData,
+} from './share'
 
-describe('share placeholder', () => {
-  it('exists until Phase 2 implements URL-hash sharing', () => {
-    expect(sharePlaceholder).toBe('placeholder')
+const sample: ShareData = {
+  templateId: 'homework-helper',
+  audience: 'school',
+  answers: {
+    subject: 'maths',
+    topic: 'fractions addition',
+    grade: 'class-8',
+    tags: ['a', 'b'],
+  },
+}
+
+describe('share round trip', () => {
+  it('encodes and decodes back to the same data', () => {
+    const decoded = decodeShareData(encodeShareData(sample))
+    expect(decoded).toEqual(sample)
+  })
+
+  it('accepts full hash, prefixed, and raw forms', () => {
+    const encoded = encodeShareData(sample)
+    expect(decodeShareData(`#data=${encoded}`)).toEqual(sample)
+    expect(decodeShareData(`data=${encoded}`)).toEqual(sample)
+    expect(decodeShareData(buildShareHash(sample))).toEqual(sample)
+  })
+
+  it('survives unicode answers', () => {
+    const unicode: ShareData = {
+      templateId: 'course-study-buddy',
+      audience: 'college',
+      answers: { course: 'Tamilò இலக்கியம் 🎓' },
+    }
+    expect(decodeShareData(encodeShareData(unicode))).toEqual(unicode)
+  })
+})
+
+describe('invalid share input', () => {
+  it('returns null instead of crashing', () => {
+    expect(decodeShareData('')).toBeNull()
+    expect(decodeShareData('#data=')).toBeNull()
+    expect(decodeShareData('not-valid-base64!!!')).toBeNull()
+    expect(decodeShareData('#data=aGVsbG8=')).toBeNull() // "hello", wrong shape
+  })
+
+  it('rejects unknown audiences and bad answer types', () => {
+    const badAudience = encodeShareData({
+      templateId: 'x',
+      audience: 'aliens',
+      answers: {},
+    } as unknown as ShareData)
+    expect(decodeShareData(badAudience)).toBeNull()
+
+    const badAnswers = encodeShareData({
+      templateId: 'x',
+      audience: 'school',
+      answers: { topic: 42 },
+    } as unknown as ShareData)
+    expect(decodeShareData(badAnswers)).toBeNull()
   })
 })
