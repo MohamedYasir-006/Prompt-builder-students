@@ -108,3 +108,11 @@ export const homeworkHelper: Template = {
     'After finishing, ask for a 5-question mini quiz.',
   ],
 }
+
+/**
+ * Answer format used when the help type is checking an answer: the bot must
+ * see the student's work first, then judge it. Referenced by `buildPrompt`
+ * (see `resolveOutputFormat`); not part of the `Template` schema.
+ */
+export const homeworkHelperCheckAnswerOutputFormat =
+  'First, ask the student to show their work on the question.\nThen reply in this order:\n(a) What is correct in their work (one line)\n(b) Exactly where it went wrong (one line)\n(c) The corrected step, explained simply\n(d) One quick practice question on the same topic'

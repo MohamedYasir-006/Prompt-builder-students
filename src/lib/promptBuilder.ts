@@ -1,4 +1,5 @@
 import { getSafetyRules } from '../data/safetyRules'
+import { homeworkHelperCheckAnswerOutputFormat } from '../data/templates/school/homework-helper'
 import { getToneById } from '../data/tones'
 import type {
   Answers,
@@ -123,8 +124,9 @@ function buildContext(
   audience: Audience,
 ): string {
   const parts = [`You are helping a ${audience} student.`]
+  const subjectLabel = audience === 'school' ? 'Subject' : 'Course'
   const subject = firstNonEmpty(template, answers, ['subject', 'course'])
-  if (subject !== '') parts.push(`Subject/course: ${subject}.`)
+  if (subject !== '') parts.push(`${subjectLabel}: ${subject}.`)
   const topic = firstNonEmpty(template, answers, ['topic', 'focusTopic'])
   if (topic !== '') parts.push(`Current topic: ${topic}.`)
   const level = firstNonEmpty(template, answers, ['grade', 'year', 'level'])
@@ -137,6 +139,24 @@ function buildTone(answers: Answers): string {
   const id = Array.isArray(raw) ? (raw[0] ?? '') : (raw ?? '')
   const tone = getToneById(id.trim())
   return tone?.instruction ?? ''
+}
+
+const FIRST_MESSAGE_LEAD_IN =
+  'Begin the conversation by sending this message to the student:'
+
+/**
+ * The Homework Helper answer format depends on the help type: checking an
+ * answer needs a correct/wrong/corrected flow, everything else uses the
+ * template's standard step-by-step format.
+ */
+function resolveOutputFormat(template: Template, answers: Answers): string {
+  if (template.id !== 'homework-helper') return template.outputFormat
+  const helpKind = answers['helpKind']
+  const values = Array.isArray(helpKind) ? helpKind : [helpKind]
+  if (values.includes('check-answer')) {
+    return homeworkHelperCheckAnswerOutputFormat
+  }
+  return template.outputFormat
 }
 
 function buildKnowledge(answers: Answers): string {
@@ -175,10 +195,10 @@ export function buildPrompt(
     ),
     knowledge: cap(buildKnowledge(answers)),
     outputFormat: cap(
-      fillPlaceholders(template.outputFormat, template, answers),
+      fillPlaceholders(resolveOutputFormat(template, answers), template, answers),
     ),
     firstMessage: cap(
-      fillPlaceholders(template.firstMessage, template, answers),
+      `${FIRST_MESSAGE_LEAD_IN}\n\n${fillPlaceholders(template.firstMessage, template, answers)}`,
     ),
   }
 

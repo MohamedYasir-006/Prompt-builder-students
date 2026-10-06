@@ -152,3 +152,66 @@ describe('end-to-end prompts for both starter templates', () => {
     expect(result.fullText).toContain('## RULES')
   })
 })
+
+describe('context labels', () => {
+  it('labels the field Subject for school audiences', () => {
+    const result = buildPrompt(homeworkHelper, homeworkAnswers, 'school')
+    const context = result.sections.find((s) => s.id === 'context')?.content ?? ''
+    expect(context).toContain('Subject: Maths.')
+  })
+
+  it('labels the field Course for college audiences', () => {
+    const result = buildPrompt(courseStudyBuddy, buddyAnswers, 'college')
+    const context = result.sections.find((s) => s.id === 'context')?.content ?? ''
+    expect(context).toContain('Course: Data Structures.')
+    expect(context).not.toContain('Subject:')
+  })
+})
+
+describe('first message lead-in', () => {
+  it('opens the section with the send-this-message instruction', () => {
+    for (const [template, answers, audience] of [
+      [homeworkHelper, homeworkAnswers, 'school'],
+      [courseStudyBuddy, buddyAnswers, 'college'],
+    ] as const) {
+      const result = buildPrompt(template, answers, audience)
+      const first =
+        result.sections.find((s) => s.id === 'firstMessage')?.content ?? ''
+      expect(first.startsWith('Begin the conversation by sending this message to the student:')).toBe(true)
+    }
+  })
+})
+
+describe('homework output format by help type', () => {
+  it('uses the check-answer flow when checking an answer', () => {
+    const result = buildPrompt(
+      homeworkHelper,
+      { ...homeworkAnswers, helpKind: 'check-answer' },
+      'school',
+    )
+    const format =
+      result.sections.find((s) => s.id === 'outputFormat')?.content ?? ''
+    expect(format).toContain('ask the student to show their work')
+    expect(format).toContain('(a) What is correct')
+    expect(format).toContain('(d) One quick practice question')
+  })
+
+  it('keeps the standard steps for other help types', () => {
+    const result = buildPrompt(
+      homeworkHelper,
+      { ...homeworkAnswers, helpKind: 'explain-steps' },
+      'school',
+    )
+    const format =
+      result.sections.find((s) => s.id === 'outputFormat')?.content ?? ''
+    expect(format).toContain('What the question asks')
+    expect(format).not.toContain('show their work')
+  })
+
+  it('leaves other templates on their standard format', () => {
+    const result = buildPrompt(courseStudyBuddy, buddyAnswers, 'college')
+    const format =
+      result.sections.find((s) => s.id === 'outputFormat')?.content ?? ''
+    expect(format).toContain('Key idea in 2-3 lines')
+  })
+})
